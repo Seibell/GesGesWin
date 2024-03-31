@@ -1,5 +1,10 @@
 ## IS4151 Assignment 1 (GesGesWin+ System)
 
+- Ryan Lim Chin Wee
+- A0237868J
+- e0772466@u.nus.edu
+- 86616392
+
 ### Parts:
 
 - **Display**
