@@ -3,17 +3,29 @@ let currentLetterIndex = 0;
 let gameStarted = false;
 let gameActive = false;
 let playerName = "";
-let alphabet = "";
+let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 let lastGestureTime = 0;
 radio.setGroup(1);
-alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-basic.showString("Welcome! Press A to start");
+
+function resetGameState() {
+  nameConfirmed = false;
+  currentLetterIndex = 0;
+  gameStarted = false;
+  gameActive = false;
+  playerName = "";
+  // Resetting lastGestureTime might be optional depending on your use case
+  lastGestureTime = 0;
+  basic.showString("WLC! Press A!");
+}
+
+resetGameState(); // Call this function at startup to initialize the state.
 
 function startGame() {
   gameActive = true; // Enable gesture listening
   basic.showString("Go!");
   listenForGestures();
 }
+
 function countdown() {
   for (let i = 3; i > 0; i--) {
     basic.showNumber(i);
@@ -24,6 +36,7 @@ function countdown() {
   radio.sendString("START,Name:" + playerName);
   startGame();
 }
+
 // Start game with Button A
 input.onButtonPressed(Button.A, function () {
   if (!gameStarted) {
@@ -33,6 +46,7 @@ input.onButtonPressed(Button.A, function () {
     showCurrentLetter();
   }
 });
+
 // Show the current letter
 function showCurrentLetter() {
   basic.showString(alphabet.charAt(currentLetterIndex));
@@ -41,59 +55,56 @@ function showCurrentLetter() {
 // Listen for game end signal
 radio.onReceivedString(function (receivedString) {
   if (receivedString == "GAME END") {
-    gameActive = false; // Stop listening for gestures
-    basic.showString("Game Over");
-    basic.pause(2000);
-    basic.clearScreen();
-
-    // Reset game state
-    gameStarted = false;
-    gameActive = false;
-    playerName = "";
-    nameConfirmed = false;
-    currentLetterIndex = 0;
-    basic.showString("Welcome! Press A to start");
+    endGame(); // Handle end game logic in a separate function for clarity
   }
 });
 
+function endGame() {
+  gameActive = false; // Stop listening for gestures
+  basic.showString("Game Over");
+  basic.pause(2000);
+  basic.clearScreen();
+  resetGameState(); // Reset the game state to allow starting a new game
+}
+
 function listenForGestures() {
   grove.onGesture(GroveGesture.Clockwise, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("CW");
       basic.showIcon(IconNames.Happy);
     }
   });
   grove.onGesture(GroveGesture.Up, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("U");
       basic.showArrow(ArrowNames.North);
     }
   });
   grove.onGesture(GroveGesture.Down, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("D");
       basic.showArrow(ArrowNames.South);
     }
   });
   grove.onGesture(GroveGesture.Left, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("L");
       basic.showArrow(ArrowNames.West);
     }
   });
   grove.onGesture(GroveGesture.Right, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("R");
       basic.showArrow(ArrowNames.East);
     }
   });
   grove.onGesture(GroveGesture.Anticlockwise, function () {
-    if (gameActive && input.runningTime() - lastGestureTime >= 500) {
+    if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString("ACW");
       basic.showIcon(IconNames.Sad);
