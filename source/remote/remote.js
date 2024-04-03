@@ -41,6 +41,7 @@ function startGame() {
   control.inBackground(function () {
     while (gameActive) {
       updateScoreDisplay();
+      measureDistanceAndSend();
       basic.pause(500);
     }
   });
@@ -54,6 +55,11 @@ function countdown() {
   basic.clearScreen();
   radio.sendString("START:" + playerName);
   startGame();
+}
+
+function measureDistanceAndSend() {
+  let distance = grove.measureInCentimeters(DigitalPin.P0); // Measure distance in cm
+  radio.sendString("D:" + distance);
 }
 
 function updateScoreDisplay() {

@@ -112,6 +112,12 @@ radio.onReceivedString(function (receivedString: string) {
     music.playTone(Note.C, music.beat(BeatFraction.Whole)); // Sound on correct gesture
   } else if (receivedString === "END") {
     gameActive = false;
+  } else if (receivedString.indexOf("D:") == 0 && gameActive) {
+    let distance = parseInt(receivedString.split(":")[1]);
+    if (distance < 20) {
+      music.playTone(Note.F5, music.beat(BeatFraction.Double)); // Sound when the distance is less than 20 cm
+      score = 0; // Reset the score if the distance is less than 20 cm
+    }
   }
 });
 
