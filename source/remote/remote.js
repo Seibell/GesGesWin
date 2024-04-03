@@ -3,9 +3,22 @@ let currentLetterIndex = 0;
 let gameStarted = false;
 let gameActive = false;
 let playerName = "";
-let alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 let lastGestureTime = 0;
+let score = 0;
 radio.setGroup(1);
+
+const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const WELCOME = "WLC! Press A";
+const NAME_PROMPT = "Name?";
+const GAME_START = "Go!";
+const GAME_OVER = "Game Over!";
+const GAME_END = "END";
+const ACW = "ACW";
+const CW = "CW";
+const U = "U";
+const D = "D";
+const L = "L";
+const R = "R";
 
 function resetGameState() {
   nameConfirmed = false;
@@ -13,16 +26,16 @@ function resetGameState() {
   gameStarted = false;
   gameActive = false;
   playerName = "";
-  // Resetting lastGestureTime might be optional depending on your use case
   lastGestureTime = 0;
-  basic.showString("WLC! Press A!");
+  basic.showString(WELCOME);
 }
 
-resetGameState(); // Call this function at startup to initialize the state.
+// Initialize the game state
+resetGameState();
 
 function startGame() {
   gameActive = true; // Enable gesture listening
-  basic.showString("Go!");
+  basic.showString(GAME_START);
   listenForGestures();
 }
 
@@ -32,16 +45,30 @@ function countdown() {
     basic.pause(1000);
   }
   basic.clearScreen();
-  // Signal the game start with the player's name after countdown
-  radio.sendString("START,Name:" + playerName);
+  radio.sendString("START:" + playerName);
   startGame();
+}
+
+function updateScoreDisplay() {
+  // Clear the LED display
+  basic.clearScreen();
+
+  // Calculate the number of LEDs to light up based on the score
+  let ledsToLight = score % 25; // Modulo 25 to cycle through if score is above 24
+
+  // Determine the row and column for each LED to light up
+  for (let i = 0; i < ledsToLight; i++) {
+    let row = Math.floor(i / 5); // Determine row (0 to 4)
+    let col = i % 5; // Determine column (0 to 4)
+    led.plot(col, row);
+  }
 }
 
 // Start game with Button A
 input.onButtonPressed(Button.A, function () {
   if (!gameStarted) {
     gameStarted = true;
-    basic.showString("Name:");
+    basic.showString(NAME_PROMPT);
     // Start name selection
     showCurrentLetter();
   }
@@ -52,76 +79,78 @@ function showCurrentLetter() {
   basic.showString(alphabet.charAt(currentLetterIndex));
 }
 
-// Listen for game end signal
 radio.onReceivedString(function (receivedString) {
-  if (receivedString == "GAME END") {
-    endGame(); // Handle end game logic in a separate function for clarity
+  if (receivedString == "END") {
+    endGame();
+  }
+  if (receivedString.indexOf("S:") == 0) {
+    score = parseInt(receivedString.split(":")[1]);
   }
 });
 
 function endGame() {
-  gameActive = false; // Stop listening for gestures
-  basic.showString("Game Over");
+  gameActive = false;
+  basic.showString(GAME_OVER);
   basic.pause(2000);
   basic.clearScreen();
-  resetGameState(); // Reset the game state to allow starting a new game
+  resetGameState();
 }
 
 function listenForGestures() {
   grove.onGesture(GroveGesture.Clockwise, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("CW");
-      basic.showIcon(IconNames.Happy);
+      radio.sendString(CW);
+      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Up, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("U");
-      basic.showArrow(ArrowNames.North);
+      radio.sendString(U);
+      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Down, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("D");
-      basic.showArrow(ArrowNames.South);
+      radio.sendString(D);
+      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Left, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("L");
-      basic.showArrow(ArrowNames.West);
+      radio.sendString(L);
+      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Right, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("R");
-      basic.showArrow(ArrowNames.East);
+      radio.sendString(R);
+      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Anticlockwise, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
-      radio.sendString("ACW");
-      basic.showIcon(IconNames.Sad);
+      radio.sendString(ACW);
+      updateScoreDisplay();
     }
   });
 }
 
 // Confirm letter and complete name selection with Button A+B
 input.onButtonPressed(Button.AB, function () {
-  // This condition prevents name confirmation during active gameplay
   if (gameStarted && !gameActive && !nameConfirmed) {
     playerName += alphabet.charAt(currentLetterIndex);
-    basic.showString(playerName);
-    if (playerName.length >= 1) {
-      // 1 letter name
+    // basic.showString(playerName);
+    if (playerName.length >= 5) {
+      //1 letter name, to change later to 5
       nameConfirmed = true;
-      basic.showString("OK");
+      basic.showString(" OK");
+      basic.pause(1000); // Pause to allow for garbage collection
       countdown();
     }
   }

@@ -17,23 +17,23 @@ function displayGesture() {
       basic.showArrow(ArrowNames.North);
       break;
     case "D":
-      music.playTone(Note.D5, music.beat(BeatFraction.Half)); // Unique sound for "Down"
+      music.playTone(Note.E5, music.beat(BeatFraction.Half)); // Unique sound for "Down"
       basic.showArrow(ArrowNames.South);
       break;
     case "L":
-      music.playTone(Note.F5, music.beat(BeatFraction.Half)); // Unique sound for "Left"
+      music.playTone(Note.E5, music.beat(BeatFraction.Half)); // Unique sound for "Left"
       basic.showArrow(ArrowNames.West);
       break;
     case "R":
-      music.playTone(Note.G5, music.beat(BeatFraction.Half)); // Unique sound for "Right"
+      music.playTone(Note.E5, music.beat(BeatFraction.Half)); // Unique sound for "Right"
       basic.showArrow(ArrowNames.East);
       break;
     case "CW":
-      music.playTone(Note.A5, music.beat(BeatFraction.Half)); // Unique sound for "Clockwise"
+      music.playTone(Note.E5, music.beat(BeatFraction.Half)); // Unique sound for "Clockwise"
       basic.showIcon(IconNames.Happy);
       break;
     case "ACW":
-      music.playTone(Note.B5, music.beat(BeatFraction.Half)); // Unique sound for "Anti-clockwise"
+      music.playTone(Note.E5, music.beat(BeatFraction.Half)); // Unique sound for "Anti-clockwise"
       basic.showIcon(IconNames.Sad);
       break;
   }
@@ -43,19 +43,23 @@ function startGame(receivedName: string) {
   gameActive = true;
   playerName = receivedName;
   score = 0;
-  basic.showString("Hi " + playerName + "!");
+  basic.showString(playerName);
   music.playTone(Note.C5, music.beat(BeatFraction.Double)); // Sound when the game starts
 
   control.inBackground(() => {
     while (gameActive) {
       displayGesture();
-      basic.pause(3000); // Each gesture is shown for 3 seconds before the next
+      let elapsedTime = 0;
+      while (!gestureScored && elapsedTime < 3000) {
+        basic.pause(500); // Check every 500 milliseconds
+        elapsedTime += 500;
+      }
     }
   });
 
-  // Timer to end the game after 180 seconds
+  // Timer to end the game after a certain duration
   control.inBackground(() => {
-    basic.pause(18000); // Pause for 180 seconds (3 minutes)
+    basic.pause(180000); // Pause for 180 seconds (3 minutes)
     if (gameActive) {
       endGame(); // End the game
     }
@@ -63,19 +67,39 @@ function startGame(receivedName: string) {
 }
 
 function endGame() {
+  let device_id = "1";
+
   gameActive = false;
   music.playTone(Note.G5, music.beat(BeatFraction.Double)); // Sound when the game ends
+  radio.sendString("END"); // Inform the controller that the game has ended
   basic.showString("End");
   basic.showString("Score: " + score);
-  radio.sendString("GAME END"); // Inform the controller that the game has ended
 
-  let device_id = "GameDevice1";
-  radio.sendString(`E,ID:${device_id},N:${playerName},S:${score}`);
+  radio.sendString(`ID:${device_id}`);
+  radio.sendString(`NAME:${playerName}`);
+  radio.sendString(`SCORE:${score}`);
 }
 
+function resetGameState() {
+  score = 0;
+  gameActive = false;
+  playerName = "";
+  currentGesture = "";
+  gestureScored = false;
+  basic.clearScreen();
+  music.playTone(Note.B5, music.beat(BeatFraction.Half));
+}
+
+input.onButtonPressed(Button.AB, function () {
+  if (gameActive) {
+    endGame();
+    resetGameState();
+  }
+});
+
 radio.onReceivedString(function (receivedString: string) {
-  if (receivedString.indexOf("START,Name:") === 0) {
-    playerName = receivedString.slice("START,Name:".length);
+  if (receivedString.indexOf("START:") === 0) {
+    playerName = receivedString.slice("START:".length);
     startGame(playerName);
   } else if (
     gameActive &&
@@ -84,8 +108,9 @@ radio.onReceivedString(function (receivedString: string) {
   ) {
     gestureScored = true; // Ensure only 1 point can be scored per gesture
     score++;
+    radio.sendString("S: " + score); // Send the updated score to the controller
     music.playTone(Note.C, music.beat(BeatFraction.Whole)); // Sound on correct gesture
-  } else if (receivedString === "GAME END") {
+  } else if (receivedString === "END") {
     gameActive = false;
   }
 });
