@@ -58,8 +58,8 @@ function updateScoreDisplay() {
 
   // Determine the row and column for each LED to light up
   for (let i = 0; i < ledsToLight; i++) {
-    let row = Math.floor(i / 5); // Determine row (0 to 4)
-    let col = i % 5; // Determine column (0 to 4)
+    let row = Math.floor(i / 5);
+    let col = i % 5;
     led.plot(col, row);
   }
 }
