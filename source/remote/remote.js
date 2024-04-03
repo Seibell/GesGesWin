@@ -37,6 +37,13 @@ function startGame() {
   gameActive = true; // Enable gesture listening
   basic.showString(GAME_START);
   listenForGestures();
+
+  control.inBackground(function () {
+    while (gameActive) {
+      updateScoreDisplay();
+      basic.pause(500);
+    }
+  });
 }
 
 function countdown() {
@@ -93,7 +100,8 @@ function endGame() {
   basic.showString(GAME_OVER);
   basic.pause(2000);
   basic.clearScreen();
-  resetGameState();
+  // resetGameState();
+  crash();
 }
 
 function listenForGestures() {
@@ -101,42 +109,36 @@ function listenForGestures() {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(CW);
-      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Up, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(U);
-      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Down, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(D);
-      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Left, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(L);
-      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Right, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(R);
-      updateScoreDisplay();
     }
   });
   grove.onGesture(GroveGesture.Anticlockwise, function () {
     if (gameActive && input.runningTime() - lastGestureTime >= 1000) {
       lastGestureTime = input.runningTime();
       radio.sendString(ACW);
-      updateScoreDisplay();
     }
   });
 }
@@ -155,6 +157,14 @@ input.onButtonPressed(Button.AB, function () {
     }
   }
 });
+
+// Function to force a 020 error (reset microbit)
+function crash() {
+  let largeArray = [];
+  for (let i = 0; i < 10000; i++) {
+    largeArray.push(i);
+  }
+}
 
 // Scroll through the alphabet with Button B, confirm with A+B
 input.onButtonPressed(Button.B, function () {
