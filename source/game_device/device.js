@@ -4,6 +4,18 @@ let gameActive = false;
 let playerName = "";
 let currentGesture = ""; // Variable to store the currently expected gesture
 let gestureScored = false; // Track if a point has been scored for the current gesture
+let lastGestureTime = 0;
+
+// Gesture constants
+const U = "U";
+const D = "D";
+const L = "L";
+const R = "R";
+const CW = "CW";
+const ACW = "ACW";
+
+// init display
+let display = grove.createDisplay(DigitalPin.P1, DigitalPin.P15);
 
 function displayGesture() {
   gestureScored = false; // Reset for the new gesture
@@ -39,12 +51,51 @@ function displayGesture() {
   }
 }
 
+function listenForGestures() {
+  grove.onGesture(GroveGesture.Clockwise, function () {
+    checkAndScoreGesture(CW);
+  });
+  grove.onGesture(GroveGesture.Anticlockwise, function () {
+    checkAndScoreGesture(ACW);
+  });
+  grove.onGesture(GroveGesture.Up, function () {
+    checkAndScoreGesture(U);
+  });
+  grove.onGesture(GroveGesture.Down, function () {
+    checkAndScoreGesture(D);
+  });
+  grove.onGesture(GroveGesture.Left, function () {
+    checkAndScoreGesture(L);
+  });
+  grove.onGesture(GroveGesture.Right, function () {
+    checkAndScoreGesture(R);
+  });
+}
+
+function checkAndScoreGesture(gesture: string) {
+  if (
+    gameActive &&
+    currentGesture == gesture &&
+    input.runningTime() - lastGestureTime >= 500
+  ) {
+    lastGestureTime = input.runningTime();
+    score++;
+    display.show(score); // Display the score on the 4-digit display
+    gestureScored = true;
+    music.playTone(Note.C, music.beat(BeatFraction.Whole)); // Sound on correct gesture
+  }
+}
+
 function startGame(receivedName: string) {
   gameActive = true;
   playerName = receivedName;
   score = 0;
   basic.showString(playerName);
+  lastGestureTime = input.runningTime();
   music.playTone(Note.C5, music.beat(BeatFraction.Double)); // Sound when the game starts
+
+  // Start listening for gestures
+  listenForGestures();
 
   control.inBackground(() => {
     while (gameActive) {
@@ -57,6 +108,13 @@ function startGame(receivedName: string) {
     }
   });
 
+  control.inBackground(() => {
+    while (gameActive) {
+      measureDistance();
+      basic.pause(1000); // Check every 1 second
+    }
+  });
+
   // Timer to end the game after a certain duration
   control.inBackground(() => {
     basic.pause(180000); // Pause for 180 seconds (3 minutes)
@@ -64,6 +122,16 @@ function startGame(receivedName: string) {
       endGame(); // End the game
     }
   });
+}
+
+// Measure distance using grove ultrasonic ranger, if player is < 20cm away from device, reset score and play sound
+function measureDistance() {
+  let distance = grove.measureInCentimeters(DigitalPin.P0);
+  if (distance < 20) {
+    music.playTone(659, music.beat(BeatFraction.Breve));
+    score = 0;
+    display.show(score);
+  }
 }
 
 function endGame() {
@@ -86,7 +154,9 @@ function resetGameState() {
   playerName = "";
   currentGesture = "";
   gestureScored = false;
+  lastGestureTime = 0;
   basic.clearScreen();
+  display.show(score); // Reset the 4-digit display
   music.playTone(Note.B5, music.beat(BeatFraction.Half));
 }
 
@@ -101,23 +171,6 @@ radio.onReceivedString(function (receivedString: string) {
   if (receivedString.indexOf("START:") === 0) {
     playerName = receivedString.slice("START:".length);
     startGame(playerName);
-  } else if (
-    gameActive &&
-    receivedString === currentGesture &&
-    !gestureScored
-  ) {
-    gestureScored = true; // Ensure only 1 point can be scored per gesture
-    score++;
-    radio.sendString("S: " + score); // Send the updated score to the controller
-    music.playTone(Note.C, music.beat(BeatFraction.Whole)); // Sound on correct gesture
-  } else if (receivedString === "END") {
-    gameActive = false;
-  } else if (receivedString.indexOf("D:") == 0 && gameActive) {
-    let distance = parseInt(receivedString.split(":")[1]);
-    if (distance < 20) {
-      music.playTone(Note.F5, music.beat(BeatFraction.Double)); // Sound when the distance is less than 20 cm
-      score = 0; // Reset the score if the distance is less than 20 cm
-    }
   }
 });
 
