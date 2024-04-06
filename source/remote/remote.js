@@ -3,7 +3,7 @@ let currentLetterIndex = 0;
 let gameStarted = false;
 let gameActive = false;
 let playerName = "";
-radio.setGroup(1);
+radio.setGroup(240);
 
 const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const WELCOME = "Welcome! Press A to start game.";

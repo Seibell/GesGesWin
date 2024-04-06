@@ -1,4 +1,4 @@
-radio.setGroup(1);
+radio.setGroup(240);
 let score = 0;
 let gameActive = false;
 let playerName = "";
@@ -128,7 +128,7 @@ function startGame(receivedName: string) {
 function measureDistance() {
   let distance = grove.measureInCentimeters(DigitalPin.P0);
   if (distance < 20) {
-    music.playTone(659, music.beat(BeatFraction.Breve));
+    music.playTone(659, music.beat(BeatFraction.Breve)); // Warning tone (i guess?)
     score = 0;
     display.show(score);
   }

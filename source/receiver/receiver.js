@@ -1,4 +1,4 @@
-radio.setGroup(1); // Ensure this matches your game device's radio group
+radio.setGroup(240); // Ensure this matches your game device's radio group
 
 serial.redirect(SerialPin.USB_TX, SerialPin.USB_RX, BaudRate.BaudRate115200);
 
